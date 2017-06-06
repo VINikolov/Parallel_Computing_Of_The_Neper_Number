@@ -7,12 +7,14 @@ public class CalculatorThread implements Callable<BigDecimal> {
 	private int tasksNumber;
 	private int threads;
 	private int totalNumberOfTasks;
+	private boolean quietMode;
 	
-	public CalculatorThread(int counter, int tasksNumber, int threads, int totalNumberOfTasks) {
+	public CalculatorThread(int counter, int tasksNumber, int threads, int totalNumberOfTasks, boolean quietMode) {
 		this.counter = counter;
 		this.tasksNumber = tasksNumber;
 		this.threads = threads;
 		this.totalNumberOfTasks = totalNumberOfTasks;
+		this.quietMode = quietMode;
 	}
 	
 	private BigDecimal CalculateFactorial(int n) {
@@ -28,6 +30,12 @@ public class CalculatorThread implements Callable<BigDecimal> {
 
 	@Override
 	public BigDecimal call() {
+		int threadNumber = counter + 1;
+		if (!quietMode) {
+			System.out.println("Thread " + threadNumber + " started.");			
+		}
+		
+		long startTime = System.currentTimeMillis();
 		BigDecimal threadResult = BigDecimal.ZERO;
 		
 		for (int i = 0; i < tasksNumber; i++) {
@@ -41,6 +49,12 @@ public class CalculatorThread implements Callable<BigDecimal> {
 			BigDecimal denominator = CalculateFactorial(2 * k);
 			BigDecimal currentNumber = numerator.divide(denominator, totalNumberOfTasks, RoundingMode.HALF_UP);
 			threadResult = threadResult.add(currentNumber);
+		}
+		
+		long endTime = System.currentTimeMillis();
+		if (!quietMode) {
+			System.out.println("Thread " + threadNumber + " stopped.");
+			System.out.println("Thread " + threadNumber + " execution time was: " + (endTime - startTime) + " milliseconds");			
 		}
 		
 		return threadResult;

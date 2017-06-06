@@ -1,5 +1,8 @@
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -10,39 +13,7 @@ import java.util.concurrent.Future;
 
 public class Program {
 	
-	private static BigDecimal CalculateFactorial(int n) {
-		BigDecimal result = BigDecimal.ONE;
-		
-		for (int i = 1; i <= n; i++) {
-			BigDecimal multiplicant = new BigDecimal(i);
-			result = result.multiply(multiplicant);
-		}
-		
-		return result;
-	}
-
-	public static BigDecimal f1(int tasksNumber, int threads, int counter, int totalNumberOfTasks) {
-		BigDecimal threadResult = BigDecimal.ZERO;
-		
-		for (int i = 0; i < tasksNumber; i++) {
-			int k = counter + i * threads;
-			
-			if (k > totalNumberOfTasks) {
-				break;
-			}
-			
-			BigDecimal numerator = new BigDecimal(2 * k + 1);
-			BigDecimal denominator = CalculateFactorial(2 * k);
-			BigDecimal currentNumber = numerator.divide(denominator, totalNumberOfTasks, RoundingMode.HALF_UP);
-			threadResult = threadResult.add(currentNumber);
-		}
-		
-		return threadResult;
-	}
-	
-	/////////////////////////////
-	
-	public static void Calculate(int numberOfTasks, int threads) {
+	public static void Calculate(int numberOfTasks, int threads, String outputFileName, boolean quietMode) {
 		BigDecimal result = BigDecimal.ZERO;
 		boolean remainder = (numberOfTasks % threads != 0);
 		int tasksNumber = numberOfTasks / threads + (remainder ? 1 : 0);
@@ -50,7 +21,7 @@ public class Program {
 		ExecutorService executor = Executors.newFixedThreadPool(threads);
 		List<Future<BigDecimal>> resultsList = new ArrayList<>();
 		for (int i = 0; i < threads; i++) {
-			Callable<BigDecimal> callable = new CalculatorThread(i, tasksNumber, threads, numberOfTasks);
+			Callable<BigDecimal> callable = new CalculatorThread(i, tasksNumber, threads, numberOfTasks, quietMode);
 			Future<BigDecimal> future = executor.submit(callable);
 			resultsList.add(future);
 		}
@@ -67,20 +38,65 @@ public class Program {
 		
 		executor.shutdown();
 		
-		System.out.println(result.toString());
+		if (outputFileName.isEmpty()) {
+			return;
+		}
+		
+		File outputFile = new File(outputFileName);
+		
+		if (!outputFile.exists()) {
+			try {
+				outputFile.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+        }
+		
+		String resultStr = "e = " + result.toString();
+		
+		try {
+			Files.write(Paths.get(outputFileName), resultStr.getBytes());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 	public static void main(String[] args) {
-		int p = 10000;
-		int t = 4;
-		
 		long startTime = System.currentTimeMillis();
-		//BigDecimal result = f1(p, t, 0, p);
-		Calculate(p, t);
+		
+		int tasks = 0;
+		int threads = 0;
+		String outputFileName = "result.txt";
+		boolean quietMode = false;
+		
+		for (int i = 0; i < args.length; i++) {
+			switch (args[i]) {
+			case "-p":
+				tasks = Integer.parseInt(args[++i]);
+				break;
+			case "-t":
+				threads = Integer.parseInt(args[++i]);
+				break;
+			case "-o":
+				outputFileName = args[++i];
+				break;
+			case "-q":
+				quietMode = true;
+				break;
+			default:
+				break;
+			}
+		}
+		
+		Calculate(tasks, threads, outputFileName, quietMode);
 		long endTime = System.currentTimeMillis();
-
-		//System.out.println(result);
-		System.out.println("T" + t + " = " + (endTime - startTime));
+		
+		if (!quietMode) {
+			System.out.println("Threads used in current run: " + threads);			
+		}
+		
+		System.out.println("Total execution time: " + (endTime - startTime) + " milliseconds");
 	}
 
 }
