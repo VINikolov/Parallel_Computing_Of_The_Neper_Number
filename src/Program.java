@@ -65,8 +65,8 @@ public class Program {
 	public static void main(String[] args) {
 		long startTime = System.currentTimeMillis();
 		
-		int tasks = 0;
-		int threads = 0;
+		int tasks = 10000;
+		int threads = 4;
 		String outputFileName = "result.txt";
 		boolean quietMode = false;
 		

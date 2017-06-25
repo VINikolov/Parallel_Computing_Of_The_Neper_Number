@@ -17,10 +17,10 @@ public class CalculatorThread implements Callable<BigDecimal> {
 		this.quietMode = quietMode;
 	}
 	
-	private BigDecimal CalculateFactorial(int n) {
-		BigDecimal result = BigDecimal.ONE;
+	private BigDecimal CalculateFactorial(int n, BigDecimal lastFact, int lastCounter) {
+		BigDecimal result = lastFact;
 		
-		for (int i = 1; i <= n; i++) {
+		for (int i = lastCounter; i <= n; i++) {
 			BigDecimal multiplicant = new BigDecimal(i);
 			result = result.multiply(multiplicant);
 		}
@@ -37,6 +37,8 @@ public class CalculatorThread implements Callable<BigDecimal> {
 		
 		long startTime = System.currentTimeMillis();
 		BigDecimal threadResult = BigDecimal.ZERO;
+		BigDecimal lastFact = BigDecimal.ONE;
+		int lastCounter = 1;
 		
 		for (int i = 0; i < tasksNumber; i++) {
 			int k = counter + i * threads;
@@ -46,7 +48,9 @@ public class CalculatorThread implements Callable<BigDecimal> {
 			}
 			
 			BigDecimal numerator = new BigDecimal(2 * k + 1);
-			BigDecimal denominator = CalculateFactorial(2 * k);
+			BigDecimal denominator = CalculateFactorial(2 * k, lastFact, lastCounter);
+			lastFact = denominator;
+			lastCounter = 2 * k + 1;
 			BigDecimal currentNumber = numerator.divide(denominator, totalNumberOfTasks, RoundingMode.HALF_UP);
 			threadResult = threadResult.add(currentNumber);
 		}
@@ -59,4 +63,5 @@ public class CalculatorThread implements Callable<BigDecimal> {
 		
 		return threadResult;
 	}
+
 }
